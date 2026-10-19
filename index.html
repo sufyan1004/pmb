@@ -1,0 +1,1228 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard PBM Sekolah - Portal Realtime KBM</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Google Fonts: Plus Jakarta Sans & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Plus Jakarta Sans', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#f0fdf4',
+              100: '#dcfce7',
+              500: '#22c55e',
+              600: '#16a34a',
+              700: '#15803d',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #f8fafc;
+      color: #0f172a;
+    }
+    
+    /* Smooth Scrollbar Styling */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    /* Custom Ticker Animation for Running Text */
+    @keyframes marquee {
+      0% { transform: translateX(100%); }
+      100% { transform: translateX(-100%); }
+    }
+    .animate-marquee {
+      display: inline-block;
+      white-space: nowrap;
+      animation: marquee 25s linear infinite;
+    }
+    .animate-marquee:hover {
+      animation-play-state: paused;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-slate-900 selection:text-white">
+
+  <!-- HEADER APLIKASI GLOBAL -->
+  <header class="bg-white/90 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-40 px-4 md:px-8 py-3.5 transition-all">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+      
+      <!-- Logo & Title -->
+      <div class="flex items-center space-x-3 w-full sm:w-auto justify-between sm:justify-start">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-2xl bg-slate-900 text-white flex items-center justify-center font-black text-lg shadow-md shadow-slate-900/10 shrink-0">
+            PBM
+          </div>
+          <div>
+            <div class="flex items-center space-x-2">
+              <h1 class="text-base font-extrabold text-slate-900 tracking-tight">SI-PBM ONLINE</h1>
+              <span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 font-extrabold text-[10px] rounded-full uppercase tracking-wider">LIVE</span>
+            </div>
+            <p class="text-[11px] text-slate-500 font-medium">Sistem Informasi PBM & Jurnal Mengajar Guru</p>
+          </div>
+        </div>
+
+        <!-- Clock Widget for Mobile -->
+        <div class="sm:hidden text-right">
+          <div id="live-clock-mobile" class="text-xs font-bold text-slate-900">00:00:00 WIB</div>
+        </div>
+      </div>
+
+      <!-- Mode Switcher Controls -->
+      <div class="flex items-center space-x-1.5 bg-slate-100/90 p-1.5 rounded-2xl border border-slate-200/80 w-full sm:w-auto justify-center">
+        <button id="btn-mode-display" onclick="switchViewMode('display')" class="flex items-center space-x-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition shadow-sm bg-white text-slate-900">
+          <i data-lucide="tv" class="w-3.5 h-3.5 text-blue-600"></i>
+          <span>Display Informasi</span>
+        </button>
+        <button id="btn-mode-teacher" onclick="switchViewMode('teacher')" class="flex items-center space-x-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition text-slate-500 hover:text-slate-900">
+          <i data-lucide="user-check" class="w-3.5 h-3.5 text-emerald-600"></i>
+          <span id="label-teacher-btn">Portal Guru</span>
+        </button>
+        <button id="btn-mode-admin" onclick="switchViewMode('admin')" class="flex items-center space-x-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition text-slate-500 hover:text-slate-900">
+          <i data-lucide="shield-check" class="w-3.5 h-3.5 text-slate-600"></i>
+          <span>Panel Admin Control</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- CONTAINER UTAMA -->
+  <div id="app" class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 space-y-6">
+
+    <!-- ================================================================= -->
+    <!-- TAMPILAN 1: DISPLAY INFORMASI PUBLIC (MONITOR / TV KBM)           -->
+    <!-- ================================================================= -->
+    <div id="view-display" class="space-y-6">
+      
+      <!-- Top Banner Bar: Waktu & Tanggal Realtime -->
+      <div class="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div class="space-y-1">
+          <span class="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-[10px] font-extrabold uppercase tracking-wider border border-blue-200/60">
+            MONITOR KBM SEKOLAH
+          </span>
+          <h2 class="text-2xl font-black text-slate-900 tracking-tight">Status Kegiatan Belajar Mengajar</h2>
+          <p class="text-xs text-slate-500 font-medium" id="display-date">Senin, 19 Oktober 2026</p>
+        </div>
+
+        <div class="flex items-center space-x-4 bg-slate-50 px-5 py-3 rounded-2xl border border-slate-200/60 self-stretch md:self-auto justify-between md:justify-start">
+          <div class="text-right">
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">JAM OPERASIONAL</p>
+            <p class="text-xl font-black text-slate-900" id="live-clock">00:00:00 WIB</p>
+          </div>
+          <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></div>
+        </div>
+      </div>
+
+      <!-- High-Level Metric Cards -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+        
+        <div class="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm space-y-2">
+          <div class="flex justify-between items-center text-slate-400">
+            <span class="text-[11px] font-bold uppercase tracking-wider">Keterlaksanaan PBM</span>
+            <i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-500"></i>
+          </div>
+          <p class="text-2xl md:text-3xl font-black text-slate-900">94.5%</p>
+          <p class="text-[11px] text-emerald-600 font-bold flex items-center gap-1">
+            <i data-lucide="trending-up" class="w-3 h-3"></i> Sesuai Jadwal
+          </p>
+        </div>
+
+        <div class="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm space-y-2">
+          <div class="flex justify-between items-center text-slate-400">
+            <span class="text-[11px] font-bold uppercase tracking-wider">Kehadiran Guru</span>
+            <i data-lucide="user-check" class="w-5 h-5 text-blue-500"></i>
+          </div>
+          <p class="text-2xl md:text-3xl font-black text-slate-900" id="disp-stat-guru">18 / 18</p>
+          <p class="text-[11px] text-blue-600 font-bold">100% Guru Mengajar</p>
+        </div>
+
+        <div class="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm space-y-2">
+          <div class="flex justify-between items-center text-slate-400">
+            <span class="text-[11px] font-bold uppercase tracking-wider">Presensi Siswa</span>
+            <i data-lucide="users" class="w-5 h-5 text-indigo-500"></i>
+          </div>
+          <p class="text-2xl md:text-3xl font-black text-slate-900">97.8%</p>
+          <p class="text-[11px] text-indigo-600 font-bold">Sakit 3 • Izin 2 • A 1</p>
+        </div>
+
+        <div class="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm space-y-2">
+          <div class="flex justify-between items-center text-slate-400">
+            <span class="text-[11px] font-bold uppercase tracking-wider">Jurnal Terisi</span>
+            <i data-lucide="book-open" class="w-5 h-5 text-amber-500"></i>
+          </div>
+          <p class="text-2xl md:text-3xl font-black text-slate-900" id="disp-jurnal-count">0 Dientri</p>
+          <p class="text-[11px] text-amber-600 font-bold">Terhubung Realtime</p>
+        </div>
+
+      </div>
+
+      <!-- Main Display Grid: Feed Jurnal & Side Analytics -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Tabel Feed Jurnal Mengajar Terakhir -->
+        <div class="lg:col-span-2 bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm space-y-4">
+          <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+            <div>
+              <h3 class="font-extrabold text-slate-900 text-base">Jurnal Pembelajaran Berjalan Hari Ini</h3>
+              <p class="text-xs text-slate-400">Aktivitas mengajar yang terverifikasi dan dimasukkan oleh guru</p>
+            </div>
+            <span class="px-3 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-xl border border-slate-200/60">Live Updates</span>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-50 text-slate-400 font-bold border-b border-slate-100 uppercase tracking-wider">
+                <tr>
+                  <th class="p-3">Kelas / Waktu</th>
+                  <th class="p-3">Guru & Mapel</th>
+                  <th class="p-3">Materi Pembelajaran</th>
+                  <th class="p-3">Status</th>
+                </tr>
+              </thead>
+              <tbody id="disp-table-jurnal" class="divide-y divide-slate-100 font-medium">
+                <!-- Disuntikkan via JavaScript -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Sidebar Display: Grafik & Pengumuman -->
+        <div class="space-y-6">
+          
+          <!-- Chart Presensi Ringkas -->
+          <div class="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-4">
+            <h3 class="font-extrabold text-slate-900 text-sm">Persentase Presensi Hari Ini</h3>
+            <div class="h-44 relative flex items-center justify-center">
+              <canvas id="disp-chart-kehadiran"></canvas>
+            </div>
+            <div class="grid grid-cols-2 gap-2 text-center text-xs pt-2 border-t border-slate-100">
+              <div class="p-2 rounded-xl bg-slate-50">
+                <p class="text-slate-400 font-medium text-[10px]">TOTAL SISWA</p>
+                <p class="font-extrabold text-slate-900 text-sm">540 Siswa</p>
+              </div>
+              <div class="p-2 rounded-xl bg-emerald-50 text-emerald-800">
+                <p class="text-emerald-600 font-medium text-[10px]">PRESENSI</p>
+                <p class="font-extrabold text-sm">97.8%</p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- Ticker Running Text Pengumuman -->
+      <div class="bg-slate-900 text-white rounded-2xl p-3.5 border border-slate-800 shadow-md flex items-center space-x-3 overflow-hidden">
+        <div class="px-3 py-1 bg-blue-600 text-white font-extrabold text-[10px] rounded-lg shrink-0 uppercase tracking-wider flex items-center gap-1.5">
+          <i data-lucide="megaphone" class="w-3.5 h-3.5"></i>
+          <span>Pengumuman</span>
+        </div>
+        <div class="overflow-hidden whitespace-nowrap w-full text-xs font-semibold text-slate-200">
+          <span id="display-running-text" class="animate-marquee">
+            Selamat datang di Portal Digital Monitoring PBM Sekolah. Seluruh Guru diimbau untuk mengisi jurnal mengajar tepat waktu sesuai jadwal masing-masing.
+          </span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- TAMPILAN 2: PORTAL GURU (LOGIN & JURNAL SESUAI JADWAL)            -->
+    <!-- ================================================================= -->
+    <div id="view-teacher" class="hidden space-y-6">
+      
+      <!-- STATUS BELUM LOGIN: Form Login Guru -->
+      <div id="teacher-login-card" class="max-w-md mx-auto my-8 bg-white p-8 rounded-3xl border border-slate-200/80 shadow-md space-y-6">
+        <div class="text-center space-y-2">
+          <div class="w-12 h-12 bg-emerald-100 text-emerald-700 rounded-2xl mx-auto flex items-center justify-center font-bold">
+            <i data-lucide="key-round" class="w-6 h-6"></i>
+          </div>
+          <h2 class="text-xl font-extrabold text-slate-900">Login Portal Guru</h2>
+          <p class="text-xs text-slate-500">Masuk dengan akun guru Anda untuk mengisi jurnal mengajar sesuai jadwal hari ini.</p>
+        </div>
+
+        <!-- Quick Login Shortcuts for Testing -->
+        <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200/60 space-y-1.5">
+          <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Akses Cepat Pengujian (Preset):</p>
+          <div class="flex flex-wrap gap-1.5">
+            <button type="button" onclick="quickLogin('sufyan', '123456')" class="px-2.5 py-1 bg-white border border-slate-200 rounded-xl text-[11px] font-semibold text-slate-700 hover:border-emerald-500 hover:text-emerald-600 transition">Sufyan Saad (X RPL 1)</button>
+            <button type="button" onclick="quickLogin('dahlan', '123456')" class="px-2.5 py-1 bg-white border border-slate-200 rounded-xl text-[11px] font-semibold text-slate-700 hover:border-emerald-500 hover:text-emerald-600 transition">Ahmad Dahlan (XI TKJ 2)</button>
+            <button type="button" onclick="quickLogin('siti', '123456')" class="px-2.5 py-1 bg-white border border-slate-200 rounded-xl text-[11px] font-semibold text-slate-700 hover:border-emerald-500 hover:text-emerald-600 transition">Siti Rahma (XII MM 1)</button>
+          </div>
+        </div>
+
+        <form onsubmit="handleTeacherLogin(event)" class="space-y-4 text-xs font-medium">
+          <div>
+            <label class="block font-bold text-slate-600 mb-1">NIP / Username Guru</label>
+            <input type="text" id="teacher-username" required placeholder="Masukkan NIP atau username" class="w-full p-3 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-600 mb-1">Kata Sandi</label>
+            <input type="password" id="teacher-password" required placeholder="••••••••" class="w-full p-3 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+          </div>
+          <button type="submit" class="w-full py-3 bg-slate-900 text-white font-bold rounded-xl text-xs hover:bg-slate-800 transition shadow-sm">
+            Masuk Portal Mengajar
+          </button>
+        </form>
+      </div>
+
+      <!-- STATUS SUDAH LOGIN: Dashboard Personal Guru -->
+      <div id="teacher-dashboard" class="hidden space-y-6">
+        
+        <!-- Header Info Guru -->
+        <div class="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div class="flex items-center space-x-4">
+            <div class="w-14 h-14 rounded-2xl bg-emerald-500 text-white flex items-center justify-center font-black text-xl shadow-md" id="teacher-avatar">
+              S
+            </div>
+            <div>
+              <div class="flex items-center space-x-2">
+                <span class="px-2.5 py-0.5 bg-emerald-100 text-emerald-800 rounded-full text-[10px] font-extrabold uppercase">
+                  GURU AKTIF
+                </span>
+                <span class="text-xs text-slate-400 font-medium" id="teacher-nip-label">NIP: 19850312...</span>
+              </div>
+              <h2 class="text-xl font-extrabold text-slate-900 mt-1" id="teacher-name-label">Sufyan Saad, S.Kom Gr</h2>
+              <p class="text-xs text-slate-500 font-medium" id="teacher-mapel-label">Mata Pelajaran: Pemrograman Web</p>
+            </div>
+          </div>
+
+          <button onclick="handleTeacherLogout()" class="px-4 py-2 bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-600 rounded-2xl text-xs font-bold transition flex items-center space-x-2">
+            <i data-lucide="log-out" class="w-4 h-4"></i>
+            <span>Keluar Akun</span>
+          </button>
+        </div>
+
+        <!-- Section Jadwal Hari Ini & Form Quick Jurnal -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          <!-- Daftar Jadwal Mengajar Hari Ini -->
+          <div class="lg:col-span-2 bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+              <div>
+                <h3 class="font-extrabold text-slate-900 text-base">Jadwal Mengajar Anda Hari Ini</h3>
+                <p class="text-xs text-slate-400">Pilih kelas dari jadwal Anda di bawah untuk mengisikan Jurnal Pembelajaran</p>
+              </div>
+              <span class="px-3 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-xl border border-slate-200/60" id="teacher-schedule-count">0 Kelas</span>
+            </div>
+
+            <div id="teacher-schedule-list" class="space-y-3">
+              <!-- Item Jadwal Mengajar disuntikkan via JS -->
+            </div>
+          </div>
+
+          <!-- Summary Status Jurnal Guru Hari Ini -->
+          <div class="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-4 flex flex-col justify-between">
+            <div>
+              <h3 class="font-extrabold text-slate-900 text-base border-b border-slate-100 pb-3">Status Pengisian Hari Ini</h3>
+              
+              <div class="mt-4 space-y-3">
+                <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/60">
+                  <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Jam Mengajar</p>
+                  <p class="text-2xl font-black text-slate-900 mt-0.5" id="summary-total-jam">0 JP</p>
+                </div>
+                <div class="p-4 rounded-2xl bg-emerald-50/80 border border-emerald-200/60">
+                  <p class="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">Jurnal Terisi</p>
+                  <p class="text-2xl font-black text-emerald-800 mt-0.5" id="summary-jurnal-terisi">0 Kelas</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="p-4 rounded-2xl bg-blue-50 border border-blue-200/60 text-xs text-blue-900 leading-relaxed font-medium">
+              <i data-lucide="info" class="w-4 h-4 inline text-blue-600 mr-1"></i>
+              Sistem secara otomatis menyesuaikan tampilan jurnal publik di Monitor Display Sekolah setelah Anda menyimpan materi.
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- TAMPILAN 3: PANEL ADMIN CONTROL (PENGATURAN INFORMASI & DATA)    -->
+    <!-- ================================================================= -->
+    <div id="view-admin" class="hidden space-y-6">
+
+      <!-- Admin View Sub-Header -->
+      <div class="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <div class="flex items-center space-x-2">
+            <span class="px-3 py-1 bg-slate-900 text-white rounded-full text-[10px] font-bold uppercase tracking-wider">
+              ADMIN CONTROL PANEL
+            </span>
+            <span class="text-xs text-slate-400 font-medium">Pengelolaan Data Real-Time</span>
+          </div>
+          <h2 class="text-2xl font-extrabold text-slate-900 mt-2 tracking-tight">Manajemen Informasi PBM Sekolah</h2>
+        </div>
+
+        <button onclick="openModalJurnal()" class="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl text-xs font-bold flex items-center space-x-2 shadow-sm transition">
+          <i data-lucide="plus" class="w-4 h-4"></i>
+          <span>Entri Jurnal Mengajar Manual</span>
+        </button>
+      </div>
+
+      <!-- Navigation Tabs inside Admin -->
+      <div class="flex space-x-2 border-b border-slate-200 pb-2 overflow-x-auto">
+        <button onclick="switchAdminTab('jadwal')" id="tab-admin-jadwal" class="px-4 py-2 rounded-2xl text-xs font-bold bg-slate-900 text-white shadow-sm transition shrink-0">
+          Pengaturan Jadwal Mengajar
+        </button>
+        <button onclick="switchAdminTab('jurnal')" id="tab-admin-jurnal" class="px-4 py-2 rounded-2xl text-xs font-semibold text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition shrink-0">
+          Kelola Jurnal Mengajar
+        </button>
+        <button onclick="switchAdminTab('absensi')" id="tab-admin-absensi" class="px-4 py-2 rounded-2xl text-xs font-semibold text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition shrink-0">
+          Kelola Absensi Siswa
+        </button>
+        <button onclick="switchAdminTab('pengumuman')" id="tab-admin-pengumuman" class="px-4 py-2 rounded-2xl text-xs font-semibold text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition shrink-0">
+          Pengumuman & Running Text
+        </button>
+      </div>
+
+      <!-- TAB 1: PENGATURAN JADWAL MENGAJAR -->
+      <div id="admin-sub-jadwal" class="space-y-4">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+          <div>
+            <h3 class="font-extrabold text-slate-900 text-sm">Master Jadwal Mengajar Guru</h3>
+            <p class="text-xs text-slate-400">Atur jadwal mingguan untuk membatasi pengisian jurnal guru sesuai mata pelajaran</p>
+          </div>
+          <button onclick="openModalJadwal()" class="px-3.5 py-2 bg-slate-900 text-white text-xs font-bold rounded-2xl shadow-sm hover:bg-slate-800 transition flex items-center gap-1.5">
+            <i data-lucide="calendar-plus" class="w-4 h-4"></i>
+            <span>Tambah Jadwal Baru</span>
+          </button>
+        </div>
+
+        <div class="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+              <thead class="bg-slate-50 text-slate-400 font-bold border-b border-slate-100 text-[10px] uppercase tracking-wider">
+                <tr>
+                  <th class="p-4">Hari / Waktu</th>
+                  <th class="p-4">Kelas</th>
+                  <th class="p-4">Guru Pengampu</th>
+                  <th class="p-4">Mata Pelajaran</th>
+                  <th class="p-4 text-center">Aksi Admin</th>
+                </tr>
+              </thead>
+              <tbody id="admin-table-jadwal" class="divide-y divide-slate-100 text-xs font-medium">
+                <!-- Data Jadwal disuntikkan via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: KELOLA JURNAL -->
+      <div id="admin-sub-jurnal" class="hidden space-y-4">
+        <div class="bg-white p-4 rounded-3xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row justify-between gap-4">
+          <input type="text" id="admin-search-jurnal" onkeyup="filterAdminJurnal()" placeholder="Cari materi, nama guru, atau kelas..." class="p-2.5 rounded-2xl border border-slate-200 text-xs w-full md:w-80 focus:ring-2 focus:ring-slate-900 focus:outline-none">
+          <div class="flex gap-2">
+            <select id="admin-filter-kelas" onchange="filterAdminJurnal()" class="p-2.5 rounded-2xl border border-slate-200 text-xs bg-white font-semibold">
+              <option value="">Semua Kelas</option>
+              <option value="X RPL 1">X RPL 1</option>
+              <option value="XI TKJ 2">XI TKJ 2</option>
+              <option value="XII MM 1">XII MM 1</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+              <thead class="bg-slate-50 text-slate-400 font-bold border-b border-slate-100 text-[10px] uppercase tracking-wider">
+                <tr>
+                  <th class="p-4">Kelas / Waktu</th>
+                  <th class="p-4">Guru & Mapel</th>
+                  <th class="p-4">Uraian Materi Pembelajaran</th>
+                  <th class="p-4">Status & Catatan</th>
+                  <th class="p-4 text-center">Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="admin-table-jurnal" class="divide-y divide-slate-100 text-xs font-medium">
+                <!-- Data disuntikkan via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3: KELOLA ABSENSI -->
+      <div id="admin-sub-absensi" class="hidden space-y-4">
+        <div class="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm space-y-4">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <div>
+              <h3 class="font-extrabold text-slate-900 text-base">Input Presensi Harian Siswa</h3>
+              <p class="text-xs text-slate-400">Ubah status kehadiran siswa untuk memperbarui persentase grafik di Monitor Display</p>
+            </div>
+            <select id="select-absensi-kelas" onchange="renderAdminAbsensi()" class="p-2.5 rounded-2xl border border-slate-200 text-xs bg-white font-bold">
+              <option value="X RPL 1">X RPL 1 (30 Siswa)</option>
+              <option value="XI TKJ 2">XI TKJ 2 (32 Siswa)</option>
+              <option value="XII MM 1">XII MM 1 (28 Siswa)</option>
+            </select>
+          </div>
+
+          <div id="list-absensi-siswa" class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+            <!-- Disuntikkan via JS -->
+          </div>
+
+          <div class="pt-4 border-t border-slate-100 flex justify-between items-center">
+            <span class="text-xs text-slate-400 font-medium">Total Terdaftar: <strong id="count-siswa" class="text-slate-800">4</strong> Siswa</span>
+            <button onclick="simpanAbsensiAlert()" class="px-5 py-2.5 bg-slate-900 text-white text-xs font-bold rounded-2xl hover:bg-slate-800 transition shadow-sm">
+              Simpan Presensi Kelas
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 4: PENGUMUMAN & RUNNING TEXT -->
+      <div id="admin-sub-pengumuman" class="hidden space-y-4">
+        <div class="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm space-y-4">
+          <div>
+            <h3 class="font-extrabold text-slate-900 text-base">Kelola Running Text Display</h3>
+            <p class="text-xs text-slate-400">Pesan pengumuman ini akan ditampilkan di bagian bawah Monitor Display Sekolah</p>
+          </div>
+
+          <form onsubmit="updateRunningText(event)" class="space-y-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-600 mb-1.5">Teks Pengumuman (Running Text)</label>
+              <textarea id="input-running-text" rows="3" class="w-full p-3 rounded-2xl border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-slate-900 focus:outline-none" required></textarea>
+            </div>
+            <div class="flex justify-end">
+              <button type="submit" class="px-5 py-2.5 bg-slate-900 text-white font-bold text-xs rounded-2xl hover:bg-slate-800 transition shadow-sm">
+                Perbarui Teks Display
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- MODAL INPUT JADWAL MENGAJAR BARU (ADMIN POPUP) -->
+  <div id="modal-jadwal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 space-y-5 border border-slate-200 shadow-2xl">
+      <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+        <h3 class="font-extrabold text-slate-900 text-base">Tambah Jadwal Mengajar</h3>
+        <button onclick="closeModalJadwal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <form onsubmit="simpanJadwalBaru(event)" class="space-y-4 text-xs font-medium">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-slate-600 mb-1">Hari</label>
+            <select id="form-jadwal-hari" required class="w-full p-2.5 rounded-xl border border-slate-200 bg-white">
+              <option value="Senin">Senin</option>
+              <option value="Selasa">Selasa</option>
+              <option value="Rabu">Rabu</option>
+              <option value="Kamis">Kamis</option>
+              <option value="Jumat">Jumat</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-600 mb-1">Jam Ke / Waktu</label>
+            <input type="text" id="form-jadwal-jam" required placeholder="Jam 1-3 (07.30 - 09.45)" class="w-full p-2.5 rounded-xl border border-slate-200">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-slate-600 mb-1">Pilih Guru</label>
+            <select id="form-jadwal-guru" required class="w-full p-2.5 rounded-xl border border-slate-200 bg-white">
+              <!-- Options Guru -->
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-600 mb-1">Kelas Target</label>
+            <select id="form-jadwal-kelas" required class="w-full p-2.5 rounded-xl border border-slate-200 bg-white">
+              <option value="X RPL 1">X RPL 1</option>
+              <option value="XI TKJ 2">XI TKJ 2</option>
+              <option value="XII MM 1">XII MM 1</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block font-bold text-slate-600 mb-1">Mata Pelajaran</label>
+          <input type="text" id="form-jadwal-mapel" required placeholder="Contoh: Pemrograman Web" class="w-full p-2.5 rounded-xl border border-slate-200">
+        </div>
+        <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
+          <button type="button" onclick="closeModalJadwal()" class="px-4 py-2 bg-slate-100 text-slate-600 rounded-xl font-bold">Batal</button>
+          <button type="submit" class="px-4 py-2 bg-slate-900 text-white rounded-xl font-bold shadow-sm">Simpan Jadwal</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL INPUT JURNAL BARU (ADMIN POPUP MANUAL) -->
+  <div id="modal-jurnal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 space-y-5 border border-slate-200 shadow-2xl">
+      <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+        <h3 class="font-extrabold text-slate-900 text-base">Entri Jurnal Mengajar Baru (Admin)</h3>
+        <button onclick="closeModalJurnal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+
+      <form onsubmit="simpanJurnal(event)" class="space-y-4 text-xs font-medium">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-slate-600 mb-1">Kelas</label>
+            <select id="form-kelas" required class="w-full p-2.5 rounded-xl border border-slate-200 bg-white">
+              <option value="X RPL 1">X RPL 1</option>
+              <option value="XI TKJ 2">XI TKJ 2</option>
+              <option value="XII MM 1">XII MM 1</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-600 mb-1">Jam Ke / Waktu</label>
+            <input type="text" id="form-jam" required placeholder="Jam 1-3 (07.30 - 09.45)" class="w-full p-2.5 rounded-xl border border-slate-200">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-slate-600 mb-1">Nama Guru</label>
+            <input type="text" id="form-guru" required placeholder="Nama lengkap guru" class="w-full p-2.5 rounded-xl border border-slate-200">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-600 mb-1">Mata Pelajaran</label>
+            <input type="text" id="form-mapel" required placeholder="Mata pelajaran" class="w-full p-2.5 rounded-xl border border-slate-200">
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-600 mb-1">Uraian / Ringkasan Materi</label>
+          <textarea id="form-materi" rows="3" required placeholder="Tuliskan pokok pembahasan KBM..." class="w-full p-2.5 rounded-xl border border-slate-200"></textarea>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-600 mb-1">Catatan Hambatan / Keterangan</label>
+          <input type="text" id="form-catatan" placeholder="Catatan kelas (opsional)" class="w-full p-2.5 rounded-xl border border-slate-200">
+        </div>
+
+        <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
+          <button type="button" onclick="closeModalJurnal()" class="px-4 py-2 bg-slate-100 text-slate-600 rounded-xl font-bold">Batal</button>
+          <button type="submit" class="px-4 py-2 bg-slate-900 text-white rounded-xl font-bold shadow-sm">Publikasikan Jurnal</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div id="toast" class="fixed bottom-5 right-5 z-50 bg-slate-900 text-white px-4 py-3 rounded-2xl shadow-xl flex items-center space-x-3 transition-all duration-300 transform translate-y-20 opacity-0 pointer-events-none">
+    <i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-400"></i>
+    <span class="text-xs font-semibold">Pesan berhasil diperbarui!</span>
+  </div>
+
+  <!-- SCRIPT LOGIKA APLIKASI INTERAKTIF & SYNC REALTIME -->
+  <script>
+    let activeViewMode = 'display'; // Mode awal: 'display', 'teacher', atau 'admin'
+    let activeAdminTab = 'jadwal'; // Tab admin aktif: 'jadwal', 'jurnal', 'absensi', 'pengumuman'
+    let currentLoggedInTeacher = null; // Session Guru Login
+
+    // Master Data Akun Guru
+    let dummyGuruAccounts = [
+      { id: "G01", username: "sufyan", pass: "123456", nip: "19850312 201001 1 002", nama: "Sufyan Saad, S.Kom Gr", mapel: "Pemrograman Web" },
+      { id: "G02", username: "dahlan", pass: "123456", nip: "19880724 201202 1 005", nama: "Ahmad Dahlan, S.Pd", mapel: "Jaringan Komputer" },
+      { id: "G03", username: "siti", pass: "123456", nip: "19910515 201503 2 008", nama: "Siti Rahma, M.Pd", mapel: "Desain Grafis" }
+    ];
+
+    // Master Data Jadwal Mengajar Mingguan
+    let dummyJadwal = [
+      { id: 101, hari: "Senin", jam: "Jam 1-3 (07.30 - 09.45)", guruId: "G01", kelas: "X RPL 1", mapel: "Pemrograman Web" },
+      { id: 102, hari: "Senin", jam: "Jam 4-5 (10.00 - 11.30)", guruId: "G02", kelas: "XI TKJ 2", mapel: "Jaringan Komputer" },
+      { id: 103, hari: "Senin", jam: "Jam 6-8 (12.30 - 14.45)", guruId: "G03", kelas: "XII MM 1", mapel: "Desain Grafis" },
+      { id: 104, hari: "Selasa", jam: "Jam 1-3 (07.30 - 09.45)", guruId: "G01", kelas: "XI TKJ 2", mapel: "Pemrograman Web" }
+    ];
+
+    // Data Store In-Memory Interaktif Jurnal Mengajar
+    let dummyJurnal = [
+      {
+        id: 1,
+        jam: "Jam 1-3 (07.30 - 09.45)",
+        kelas: "X RPL 1",
+        guru: "Sufyan Saad, S.Kom Gr",
+        guruId: "G01",
+        mapel: "Pemrograman Web",
+        materi: "Konsep Dasar HTML & CSS Grid Layout Responsif",
+        status: "Lengkap",
+        catatan: "Siswa antusias, KBM berjalan lancar."
+      },
+      {
+        id: 2,
+        jam: "Jam 4-5 (10.00 - 11.30)",
+        kelas: "XI TKJ 2",
+        guru: "Ahmad Dahlan, S.Pd",
+        guruId: "G02",
+        mapel: "Jaringan Komputer",
+        materi: "Konfigurasi Routing MikroTik & VLAN Switch",
+        status: "Lengkap",
+        catatan: "Praktikum lab jaringan lancar."
+      }
+    ];
+
+    let dummySiswa = [
+      { id: "101", nama: "Ahmad Rizky", kelas: "X RPL 1", status: "Hadir" },
+      { id: "102", nama: "Budi Santoso", kelas: "X RPL 1", status: "Sakit" },
+      { id: "103", nama: "Citra Dewi", kelas: "X RPL 1", status: "Hadir" },
+      { id: "104", nama: "Doni Pratama", kelas: "X RPL 1", status: "Hadir" }
+    ];
+
+    let chartKehadiranInstance = null;
+
+    // Inisialisasi Saat Load Page
+    document.addEventListener("DOMContentLoaded", () => {
+      lucide.createIcons();
+      initClock();
+      populateGuruDropdown();
+      renderAllViews();
+      initCharts();
+      
+      // Load default text pengumuman di admin
+      const runningEl = document.getElementById('display-running-text');
+      const inputEl = document.getElementById('input-running-text');
+      if (runningEl && inputEl) inputEl.value = runningEl.innerText.trim();
+    });
+
+    // Populate Select Options Guru untuk Modal Jadwal
+    function populateGuruDropdown() {
+      const el = document.getElementById('form-jadwal-guru');
+      if (!el) return;
+      el.innerHTML = dummyGuruAccounts.map(g => `
+        <option value="${g.id}">${g.nama} (${g.mapel})</option>
+      `).join('');
+    }
+
+    // Quick Preset Login
+    function quickLogin(u, p) {
+      document.getElementById('teacher-username').value = u;
+      document.getElementById('teacher-password').value = p;
+      handleTeacherLogin();
+    }
+
+    // Auth Login Guru
+    function handleTeacherLogin(e) {
+      if (e) e.preventDefault();
+      const u = document.getElementById('teacher-username').value.trim().toLowerCase();
+      const p = document.getElementById('teacher-password').value;
+
+      const found = dummyGuruAccounts.find(g => (g.username.toLowerCase() === u || g.nip === u) && g.pass === p);
+      if (found) {
+        currentLoggedInTeacher = found;
+        document.getElementById('teacher-login-card').classList.add('hidden');
+        document.getElementById('teacher-dashboard').classList.remove('hidden');
+        document.getElementById('label-teacher-btn').innerText = `Guru: ${found.nama.split(' ')[0]}`;
+        renderTeacherDashboard();
+        showToast(`Selamat datang, ${found.nama}`);
+      } else {
+        showToast("NIP/Username atau kata sandi tidak cocok!");
+      }
+    }
+
+    // Logout Guru
+    function handleTeacherLogout() {
+      currentLoggedInTeacher = null;
+      document.getElementById('teacher-login-card').classList.remove('hidden');
+      document.getElementById('teacher-dashboard').classList.add('hidden');
+      document.getElementById('label-teacher-btn').innerText = "Portal Guru";
+      showToast("Anda telah keluar dari Portal Guru.");
+    }
+
+    // Switch View Mode: Display vs Portal Guru vs Admin Control
+    function switchViewMode(mode) {
+      activeViewMode = mode;
+      const vDisplay = document.getElementById('view-display');
+      const vTeacher = document.getElementById('view-teacher');
+      const vAdmin = document.getElementById('view-admin');
+
+      const btnDisp = document.getElementById('btn-mode-display');
+      const btnTeach = document.getElementById('btn-mode-teacher');
+      const btnAdmin = document.getElementById('btn-mode-admin');
+
+      // Reset visibilitas
+      vDisplay.classList.add('hidden');
+      vTeacher.classList.add('hidden');
+      vAdmin.classList.add('hidden');
+
+      btnDisp.className = "flex items-center space-x-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition text-slate-500 hover:text-slate-900";
+      btnTeach.className = "flex items-center space-x-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition text-slate-500 hover:text-slate-900";
+      btnAdmin.className = "flex items-center space-x-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition text-slate-500 hover:text-slate-900";
+
+      if (mode === 'display') {
+        vDisplay.classList.remove('hidden');
+        btnDisp.className = "flex items-center space-x-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition shadow-sm bg-white text-slate-900";
+        showToast("Tampilan Monitor Informasi Publik");
+      } else if (mode === 'teacher') {
+        vTeacher.classList.remove('hidden');
+        btnTeach.className = "flex items-center space-x-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition shadow-sm bg-white text-emerald-800";
+        if (currentLoggedInTeacher) renderTeacherDashboard();
+      } else {
+        vAdmin.classList.remove('hidden');
+        btnAdmin.className = "flex items-center space-x-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition shadow-sm bg-slate-900 text-white";
+        showToast("Tampilan Panel Admin Control");
+      }
+      renderAllViews();
+    }
+
+    // Switch Tab di Panel Admin
+    function switchAdminTab(tab) {
+      activeAdminTab = tab;
+      ['jadwal', 'jurnal', 'absensi', 'pengumuman'].forEach(t => {
+        const sub = document.getElementById(`admin-sub-${t}`);
+        const btn = document.getElementById(`tab-admin-${t}`);
+        if (sub) sub.classList.add('hidden');
+        if (btn) {
+          btn.className = "px-4 py-2 rounded-2xl text-xs font-semibold text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition shrink-0";
+        }
+      });
+
+      const activeSub = document.getElementById(`admin-sub-${tab}`);
+      const activeBtn = document.getElementById(`tab-admin-${tab}`);
+      if (activeSub) activeSub.classList.remove('hidden');
+      if (activeBtn) {
+        activeBtn.className = "px-4 py-2 rounded-2xl text-xs font-bold bg-slate-900 text-white shadow-sm transition shrink-0";
+      }
+    }
+
+    // Render Dashboard Personal Guru Berdasarkan Jadwal
+    function renderTeacherDashboard() {
+      if (!currentLoggedInTeacher) return;
+
+      // Update Label Header Guru
+      document.getElementById('teacher-name-label').innerText = currentLoggedInTeacher.nama;
+      document.getElementById('teacher-nip-label').innerText = `NIP: ${currentLoggedInTeacher.nip}`;
+      document.getElementById('teacher-mapel-label').innerText = `Mata Pelajaran: ${currentLoggedInTeacher.mapel}`;
+      document.getElementById('teacher-avatar').innerText = currentLoggedInTeacher.nama.charAt(0);
+
+      // Filter Jadwal Mengajar Guru Ini Hari "Senin" (Default Demo)
+      const mySchedule = dummyJadwal.filter(j => j.guruId === currentLoggedInTeacher.id && j.hari === "Senin");
+      document.getElementById('teacher-schedule-count').innerText = `${mySchedule.length} Kelas Hari Ini`;
+
+      const scheduleList = document.getElementById('teacher-schedule-list');
+      if (mySchedule.length === 0) {
+        scheduleList.innerHTML = `<div class="p-6 text-center text-slate-400 text-xs">Anda tidak memiliki jadwal mengajar hari ini.</div>`;
+      } else {
+        scheduleList.innerHTML = mySchedule.map(sched => {
+          // Cek apakah jurnal untuk jadwal ini sudah diisi hari ini
+          const existingJurnal = dummyJurnal.find(j => j.guruId === currentLoggedInTeacher.id && j.kelas === sched.kelas && j.jam === sched.jam);
+
+          return `
+            <div class="p-5 rounded-2xl border border-slate-200/80 bg-slate-50/50 hover:bg-white transition space-y-3">
+              <div class="flex justify-between items-start">
+                <div>
+                  <span class="px-2.5 py-1 bg-slate-900 text-white rounded-lg text-[10px] font-bold uppercase">${sched.kelas}</span>
+                  <p class="text-xs font-extrabold text-slate-900 mt-2">${sched.jam}</p>
+                  <p class="text-xs font-semibold text-slate-500">${sched.mapel}</p>
+                </div>
+                ${existingJurnal ? `
+                  <span class="px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full text-[10px] font-extrabold flex items-center gap-1">
+                    <i data-lucide="check-circle" class="w-3 h-3"></i> Terisi
+                  </span>
+                ` : `
+                  <span class="px-3 py-1 bg-amber-100 text-amber-800 rounded-full text-[10px] font-extrabold">
+                    Belum Diisi
+                  </span>
+                `}
+              </div>
+
+              <!-- Form Input Jurnal Langsung Sesuai Jadwal -->
+              <form onsubmit="submitJurnalGuru(event, '${sched.kelas}', '${sched.jam}', '${sched.mapel}')" class="pt-3 border-t border-slate-200/60 space-y-2 text-xs">
+                <div>
+                  <label class="block font-bold text-slate-600 mb-1">Materi / Uraian Pembelajaran</label>
+                  <input type="text" required value="${existingJurnal ? existingJurnal.materi : ''}" placeholder="Tuliskan uraian materi pembelajaran..." class="w-full p-2.5 rounded-xl border border-slate-200 bg-white font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                </div>
+                <div>
+                  <label class="block font-bold text-slate-600 mb-1">Catatan KBM / Kendala (Opsional)</label>
+                  <input type="text" value="${existingJurnal ? existingJurnal.catatan : ''}" placeholder="Tuliskan catatan suasana kelas..." class="w-full p-2.5 rounded-xl border border-slate-200 bg-white font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                </div>
+                <div class="flex justify-end pt-1">
+                  <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-sm transition flex items-center gap-1.5">
+                    <i data-lucide="send" class="w-3.5 h-3.5"></i>
+                    <span>${existingJurnal ? 'Update Jurnal Mengajar' : 'Simpan Jurnal Ke Display'}</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // Update Summary Status
+      const terisiCount = dummyJurnal.filter(j => j.guruId === currentLoggedInTeacher.id).length;
+      document.getElementById('summary-total-jam').innerText = `${mySchedule.length * 2} JP`;
+      document.getElementById('summary-jurnal-terisi').innerText = `${terisiCount} Kelas`;
+
+      lucide.createIcons();
+    }
+
+    // Submit Jurnal Dari Portal Guru Sesuai Jadwal
+    function submitJurnalGuru(e, kelas, jam, mapel) {
+      e.preventDefault();
+      const form = e.target;
+      const materi = form.querySelectorAll('input')[0].value;
+      const catatan = form.querySelectorAll('input')[1].value;
+
+      // Cek apakah sudah ada jurnal untuk jadwal ini
+      const idx = dummyJurnal.findIndex(j => j.guruId === currentLoggedInTeacher.id && j.kelas === kelas && j.jam === jam);
+
+      if (idx !== -1) {
+        // Update
+        dummyJurnal[idx].materi = materi;
+        dummyJurnal[idx].catatan = catatan;
+        showToast(`Jurnal ${kelas} berhasil diperbarui!`);
+      } else {
+        // Entri Baru
+        dummyJurnal.unshift({
+          id: Date.now(),
+          jam: jam,
+          kelas: kelas,
+          guru: currentLoggedInTeacher.nama,
+          guruId: currentLoggedInTeacher.id,
+          mapel: mapel,
+          materi: materi,
+          status: "Lengkap",
+          catatan: catatan
+        });
+        showToast(`Jurnal ${kelas} telah dipublikasikan ke Display!`);
+      }
+
+      renderAllViews();
+    }
+
+    // Render Semua Tampilan secara Sinkron
+    function renderAllViews() {
+      renderDisplayJurnal();
+      renderAdminJadwal();
+      renderAdminJurnal();
+      renderAdminAbsensi();
+      if (currentLoggedInTeacher) renderTeacherDashboard();
+      updateMetrics();
+      lucide.createIcons();
+    }
+
+    // Render Tabel Master Jadwal Mengajar Admin
+    function renderAdminJadwal() {
+      const container = document.getElementById('admin-table-jadwal');
+      if (!container) return;
+
+      if (dummyJadwal.length === 0) {
+        container.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400 text-xs">Belum ada data jadwal mengajar yang diatur.</td></tr>`;
+        return;
+      }
+
+      container.innerHTML = dummyJadwal.map(item => {
+        const g = dummyGuruAccounts.find(acc => acc.id === item.guruId);
+        return `
+          <tr class="hover:bg-slate-50/80 transition">
+            <td class="p-4">
+              <span class="px-2 py-0.5 bg-slate-100 rounded-md text-[10px] font-bold text-slate-700">${item.hari}</span>
+              <p class="font-bold text-slate-900 mt-1">${item.jam}</p>
+            </td>
+            <td class="p-4">
+              <span class="font-extrabold text-slate-900">${item.kelas}</span>
+            </td>
+            <td class="p-4">
+              <p class="font-semibold text-slate-800">${g ? g.nama : 'Guru'}</p>
+              <p class="text-[10px] text-slate-400">NIP: ${g ? g.nip : '-'}</p>
+            </td>
+            <td class="p-4 font-medium text-slate-700">${item.mapel}</td>
+            <td class="p-4 text-center">
+              <button onclick="hapusJadwal(${item.id})" title="Hapus Jadwal" class="p-1.5 text-slate-400 hover:text-rose-600 rounded-xl hover:bg-rose-50 transition">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // Modal Operations Jadwal
+    function openModalJadwal() {
+      document.getElementById('modal-jadwal').classList.remove('hidden');
+    }
+
+    function closeModalJadwal() {
+      document.getElementById('modal-jadwal').classList.add('hidden');
+    }
+
+    function simpanJadwalBaru(e) {
+      e.preventDefault();
+      const guruId = document.getElementById('form-jadwal-guru').value;
+      const g = dummyGuruAccounts.find(acc => acc.id === guruId);
+
+      const baru = {
+        id: Date.now(),
+        hari: document.getElementById('form-jadwal-hari').value,
+        jam: document.getElementById('form-jadwal-jam').value,
+        guruId: guruId,
+        kelas: document.getElementById('form-jadwal-kelas').value,
+        mapel: document.getElementById('form-jadwal-mapel').value || (g ? g.mapel : "")
+      };
+
+      dummyJadwal.push(baru);
+      renderAllViews();
+      closeModalJadwal();
+      showToast("Jadwal mengajar baru berhasil ditambahkan!");
+      e.target.reset();
+    }
+
+    function hapusJadwal(id) {
+      dummyJadwal = dummyJadwal.filter(j => j.id !== id);
+      renderAllViews();
+      showToast("Jadwal mengajar berhasil dihapus!");
+    }
+
+    // Render Feed Jurnal di Display Publik
+    function renderDisplayJurnal() {
+      const container = document.getElementById('disp-table-jurnal');
+      if (!container) return;
+
+      if (dummyJurnal.length === 0) {
+        container.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-slate-400 text-xs">Belum ada jurnal KBM yang dimasukkan hari ini.</td></tr>`;
+        return;
+      }
+
+      container.innerHTML = dummyJurnal.map(item => `
+        <tr class="hover:bg-slate-50/80 transition">
+          <td class="p-3">
+            <p class="font-extrabold text-slate-900 text-xs">${item.kelas}</p>
+            <p class="text-[10px] text-slate-400 mt-0.5">${item.jam}</p>
+          </td>
+          <td class="p-3">
+            <p class="font-semibold text-slate-800">${item.guru}</p>
+            <p class="text-[10px] text-slate-500 font-semibold">${item.mapel}</p>
+          </td>
+          <td class="p-3 text-slate-700 max-w-xs leading-relaxed">${item.materi}</td>
+          <td class="p-3">
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+              ${item.status}
+            </span>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    // Render Tabel Jurnal di Panel Admin
+    function renderAdminJurnal(data = dummyJurnal) {
+      const container = document.getElementById('admin-table-jurnal');
+      if (!container) return;
+
+      if (data.length === 0) {
+        container.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400 text-xs">Data jurnal tidak ditemukan.</td></tr>`;
+        return;
+      }
+
+      container.innerHTML = data.map(item => `
+        <tr class="hover:bg-slate-50/80 transition">
+          <td class="p-4">
+            <p class="font-extrabold text-slate-900">${item.kelas}</p>
+            <p class="text-[10px] text-slate-400 mt-0.5">${item.jam}</p>
+          </td>
+          <td class="p-4">
+            <p class="font-semibold text-slate-800">${item.guru}</p>
+            <p class="text-[10px] text-slate-500 font-semibold">${item.mapel}</p>
+          </td>
+          <td class="p-4 text-slate-700 max-w-xs leading-relaxed">${item.materi}</td>
+          <td class="p-4">
+            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+              ${item.status}
+            </span>
+            <p class="text-[10px] text-slate-400 mt-1">${item.catatan || '-'}</p>
+          </td>
+          <td class="p-4 text-center">
+            <button onclick="hapusJurnal(${item.id})" title="Hapus Entri" class="p-1.5 text-slate-400 hover:text-rose-600 rounded-xl hover:bg-rose-50 transition">
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+            </button>
+          </td>
+        </tr>
+      `).join('');
+      lucide.createIcons();
+    }
+
+    // Filter Search Jurnal Admin
+    function filterAdminJurnal() {
+      const q = document.getElementById('admin-search-jurnal').value.toLowerCase();
+      const k = document.getElementById('admin-filter-kelas').value;
+      const filtered = dummyJurnal.filter(item => {
+        const matchQ = item.materi.toLowerCase().includes(q) || item.guru.toLowerCase().includes(q);
+        const matchK = k === '' || item.kelas === k;
+        return matchQ && matchK;
+      });
+      renderAdminJurnal(filtered);
+    }
+
+    // Render Absensi di Panel Admin
+    function renderAdminAbsensi() {
+      const selectedKelas = document.getElementById('select-absensi-kelas')?.value || "X RPL 1";
+      const container = document.getElementById('list-absensi-siswa');
+      if (!container) return;
+
+      const listFiltered = dummySiswa.filter(s => s.kelas === selectedKelas);
+      document.getElementById('count-siswa').innerText = listFiltered.length;
+
+      if (listFiltered.length === 0) {
+        container.innerHTML = `<div class="p-4 text-center text-xs text-slate-400">Belum ada data siswa di kelas ini.</div>`;
+        return;
+      }
+
+      container.innerHTML = listFiltered.map(siswa => `
+        <div class="flex items-center justify-between p-3.5 rounded-2xl bg-white border border-slate-200/80 shadow-sm">
+          <span class="font-bold text-slate-800 text-xs">${siswa.nama}</span>
+          <div class="flex space-x-1.5">
+            ${['Hadir', 'Sakit', 'Izin', 'Alpha'].map(st => `
+              <button onclick="changeStatusSiswa('${siswa.id}', '${st}')" class="px-3 py-1 rounded-xl text-xs font-bold transition ${siswa.status === st ? 'bg-slate-900 text-white shadow-sm' : 'bg-slate-100/80 text-slate-500 border border-slate-200/60 hover:bg-slate-200'}">
+                ${st}
+              </button>
+            `).join('')}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Event Handler Ubah Status Presensi
+    function changeStatusSiswa(id, newStatus) {
+      const idx = dummySiswa.findIndex(s => s.id === id);
+      if (idx !== -1) {
+        dummySiswa[idx].status = newStatus;
+        renderAdminAbsensi();
+        updateMetrics();
+        showToast(`Status ${dummySiswa[idx].nama} diubah menjadi ${newStatus}`);
+      }
+    }
+
+    // Update Pengumuman Display
+    function updateRunningText(e) {
+      e.preventDefault();
+      const val = document.getElementById('input-running-text').value;
+      document.getElementById('display-running-text').innerText = val;
+      showToast("Teks Pengumuman Display berhasil diperbarui!");
+    }
+
+    // Update Statistik Ringkasan di Layar Display
+    function updateMetrics() {
+      const jCountEl = document.getElementById('disp-jurnal-count');
+      if (jCountEl) jCountEl.innerText = `${dummyJurnal.length} Dientri`;
+    }
+
+    // Real-Time Clock Timer
+    function initClock() {
+      setInterval(() => {
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + " WIB";
+        const dateStr = now.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        
+        const clockEl = document.getElementById('live-clock');
+        const clockMobileEl = document.getElementById('live-clock-mobile');
+        const dateEl = document.getElementById('display-date');
+        
+        if (clockEl) clockEl.innerText = timeStr;
+        if (clockMobileEl) clockMobileEl.innerText = timeStr;
+        if (dateEl) dateEl.innerText = dateStr;
+      }, 1000);
+    }
+
+    // Modal Operations Jurnal Manual (Admin)
+    function openModalJurnal() {
+      document.getElementById('modal-jurnal').classList.remove('hidden');
+    }
+
+    function closeModalJurnal() {
+      document.getElementById('modal-jurnal').classList.add('hidden');
+    }
+
+    function simpanJurnal(e) {
+      e.preventDefault();
+      const baru = {
+        id: Date.now(),
+        kelas: document.getElementById('form-kelas').value,
+        jam: document.getElementById('form-jam').value,
+        guru: document.getElementById('form-guru').value,
+        mapel: document.getElementById('form-mapel').value,
+        materi: document.getElementById('form-materi').value,
+        status: "Lengkap",
+        catatan: document.getElementById('form-catatan').value
+      };
+      dummyJurnal.unshift(baru);
+      renderAllViews();
+      closeModalJurnal();
+      showToast("Entri Jurnal Mengajar baru berhasil diterbitkan!");
+      e.target.reset();
+    }
+
+    function hapusJurnal(id) {
+      dummyJurnal = dummyJurnal.filter(item => item.id !== id);
+      renderAllViews();
+      showToast("Jurnal mengajar berhasil dihapus");
+    }
+
+    function simpanAbsensiAlert() {
+      showToast("Data presensi kelas disinkronkan ke layar display!");
+    }
+
+    // Toast Notification Helper
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.querySelector('span').innerText = msg;
+      toast.classList.remove('translate-y-20', 'opacity-0', 'pointer-events-none');
+      setTimeout(() => {
+        toast.classList.add('translate-y-20', 'opacity-0', 'pointer-events-none');
+      }, 3000);
+    }
+
+    // Chart.js Doughnut Kehadiran di Display Mode
+    function initCharts() {
+      const ctx = document.getElementById('disp-chart-kehadiran')?.getContext('2d');
+      if (ctx) {
+        chartKehadiranInstance = new Chart(ctx, {
+          type: 'doughnut',
+          data: {
+            labels: ['Hadir', 'Sakit', 'Izin', 'Alpha'],
+            datasets: [{
+              data: [97.8, 1.2, 0.6, 0.4],
+              backgroundColor: ['#0F172A', '#F59E0B', '#10B981', '#EF4444'],
+              borderWidth: 0
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } }
+          }
+        });
+      }
+    }
+  </script>
+</body>
+</html>
